@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
     getAuth, 
@@ -41,7 +41,9 @@ import {
     LogOut,
     ArrowDownLeft,
     ArrowUpRight,
-    FileText
+    FileText,
+    Moon,
+    Sun
 } from 'lucide-react';
 
 // --- Konfigurasi Firebase ---
@@ -59,6 +61,33 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// --- Theme Context for Dark Mode ---
+const ThemeContext = createContext();
+
+const ThemeProvider = ({ children }) => {
+    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+    useEffect(() => {
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        root.classList.add(theme);
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+    };
+
+    return (
+        <ThemeContext.Provider value={{ theme, toggleTheme }}>
+            {children}
+        </ThemeContext.Provider>
+    );
+};
+
+const useTheme = () => useContext(ThemeContext);
+
 
 // --- Helper Functions ---
 const formatCurrency = (value) => {
@@ -92,10 +121,10 @@ const Modal = ({ isOpen, onClose, children, title }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm m-4 transform transition-all duration-300 scale-95 animate-in fade-in-0 zoom-in-95">
-                <div className="flex justify-between items-center p-4 border-b border-slate-200">
-                    <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-2 rounded-full transition-colors">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm m-4 transform transition-all duration-300 scale-95 animate-in fade-in-0 zoom-in-95">
+                <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{title}</h3>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-2 rounded-full transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -155,31 +184,31 @@ const LoginPage = ({ setView }) => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center items-center p-4">
             <div className="w-full max-w-sm">
                 <h1 className="text-4xl font-bold text-center text-indigo-600 mb-2">ArtoKu</h1>
-                <p className="text-center text-slate-500 mb-8 text-sm">Kelola Keuangan, Raih Tujuan</p>
+                <p className="text-center text-slate-500 dark:text-slate-400 mb-8 text-sm">Kelola Keuangan, Raih Tujuan</p>
                 
-                <div className="bg-white p-8 rounded-2xl shadow-lg">
-                    <h2 className="text-xl font-bold text-slate-800 mb-6 text-center">{isLogin ? 'Login' : 'Daftar Akun'}</h2>
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg">
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-6 text-center">{isLogin ? 'Login' : 'Daftar Akun'}</h2>
                     {error && <p className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-center text-xs">{error}</p>}
                     <form onSubmit={handleAuth}>
                         <div className="mb-4">
-                            <label className="block text-slate-600 font-semibold mb-2 text-sm" htmlFor="email">Email</label>
+                            <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-2 text-sm" htmlFor="email">Email</label>
                             <input
                                 id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
+                                className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm text-slate-800 dark:text-slate-200"
                                 placeholder="contoh@email.com" required
                             />
                         </div>
                         <div className="mb-6 relative">
-                            <label className="block text-slate-600 font-semibold mb-2 text-sm" htmlFor="password">Password</label>
+                            <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-2 text-sm" htmlFor="password">Password</label>
                             <input
                                 id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
+                                className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm text-slate-800 dark:text-slate-200"
                                 placeholder="••••••••" required
                             />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-10 text-slate-500">
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-10 text-slate-500 dark:text-slate-400">
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
@@ -187,7 +216,7 @@ const LoginPage = ({ setView }) => {
                             {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : (isLogin ? 'Login' : 'Daftar')}
                         </button>
                     </form>
-                    <p className="text-center text-slate-600 mt-6 text-sm">
+                    <p className="text-center text-slate-600 dark:text-slate-400 mt-6 text-sm">
                         {isLogin ? "Belum punya akun?" : "Sudah punya akun?"}
                         <button onClick={() => { setIsLogin(!isLogin); setError(''); }} className="text-indigo-600 font-semibold ml-1 hover:underline">
                             {isLogin ? 'Daftar' : 'Login'}
@@ -201,6 +230,7 @@ const LoginPage = ({ setView }) => {
 
 
 const HomeScreen = ({ user, setView }) => {
+    const { theme, toggleTheme } = useTheme();
     const [summary, setSummary] = useState({ balance: 0, income: 0, expense: 0 });
     const [recentTransactions, setRecentTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -262,14 +292,14 @@ const HomeScreen = ({ user, setView }) => {
     }
 
     return (
-        <div className="p-5 pb-28 bg-slate-50 min-h-screen">
+        <div className="p-5 pb-28 bg-slate-50 dark:bg-slate-900 min-h-screen">
             <header className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-xl font-bold text-slate-800">Halo, {user.name || user.email.split('@')[0]}!</h1>
-                    <p className="text-slate-500 text-sm">{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                    <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">Halo, {user.name || user.email.split('@')[0]}!</h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                 </div>
-                <button onClick={() => signOut(auth)} className="p-2 text-slate-500 hover:text-red-600">
-                    <LogOut size={22} />
+                <button onClick={toggleTheme} className="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-500">
+                    {theme === 'light' ? <Moon size={22} /> : <Sun size={22} />}
                 </button>
             </header>
 
@@ -296,14 +326,14 @@ const HomeScreen = ({ user, setView }) => {
                 </div>
 
                 <div>
-                    <h2 className="text-lg font-bold text-slate-800 mb-3">Transaksi Terakhir</h2>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3">Transaksi Terakhir</h2>
                     <div className="space-y-2.5">
                         {recentTransactions.length > 0 ? (
                             recentTransactions.map(tx => (
-                                <div key={tx.id} className="flex items-center justify-between bg-white p-3.5 rounded-xl shadow-sm">
+                                <div key={tx.id} className="flex items-center justify-between bg-white dark:bg-slate-800 p-3.5 rounded-xl shadow-sm">
                                     <div>
-                                        <p className="font-bold text-slate-800 text-sm">{tx.name}</p>
-                                        <p className="text-xs text-slate-500">{formatDate(tx.date)}</p>
+                                        <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{tx.name}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(tx.date)}</p>
                                     </div>
                                     <p className={`font-semibold text-base ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                                         {tx.type === 'income' ? '+' : '-'} {formatCurrency(tx.amount)}
@@ -311,7 +341,7 @@ const HomeScreen = ({ user, setView }) => {
                                 </div>
                             ))
                         ) : (
-                             <p className="text-center text-sm text-slate-500 bg-white p-6 rounded-lg shadow-sm">Belum ada transaksi bulan ini.</p>
+                             <p className="text-center text-sm text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">Belum ada transaksi bulan ini.</p>
                         )}
                     </div>
                 </div>
@@ -395,53 +425,53 @@ const TransactionListPage = ({ user, setView }) => {
     if (loading) return <div className="flex items-center justify-center h-screen"><LoadingSpinner /></div>;
 
     return (
-        <div className="p-4 pb-24 bg-slate-50 min-h-screen">
+        <div className="p-4 pb-24 bg-slate-50 dark:bg-slate-900 min-h-screen">
             <div className="flex items-center mb-6">
-                <button onClick={() => setView('home')} className="p-2 mr-2 rounded-full hover:bg-slate-200">
-                    <ArrowLeft size={22} className="text-slate-700" />
+                <button onClick={() => setView('home')} className="p-2 mr-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                    <ArrowLeft size={22} className="text-slate-700 dark:text-slate-300" />
                 </button>
-                <h1 className="text-xl font-bold text-slate-800">Riwayat Transaksi</h1>
+                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">Riwayat Transaksi</h1>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 mb-6 p-4 bg-white rounded-xl shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6 p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
                 <div className="flex-1">
-                    <label className="text-xs font-semibold text-slate-600">Jenis</label>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Jenis</label>
                     <select value={filter.type} onChange={(e) => setFilter({ ...filter, type: e.target.value })}
-                        className="w-full mt-1 p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        className="w-full mt-1 p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-slate-800 dark:text-slate-200">
                         <option value="all">Semua</option>
                         <option value="income">Pemasukan</option>
                         <option value="expense">Pengeluaran</option>
                     </select>
                 </div>
                 <div className="flex-1">
-                    <label className="text-xs font-semibold text-slate-600">Tanggal</label>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Tanggal</label>
                     <input type="date" value={filter.date} onChange={(e) => setFilter({ ...filter, date: e.target.value })}
-                        className="w-full mt-1 p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                        className="w-full mt-1 p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-slate-800 dark:text-slate-200" />
                 </div>
             </div>
 
             <div className="space-y-3">
                 {filteredTransactions.length > 0 ? (
                     filteredTransactions.map(tx => (
-                        <div key={tx.id} className="bg-white p-3.5 rounded-xl shadow-sm">
+                        <div key={tx.id} className="bg-white dark:bg-slate-800 p-3.5 rounded-xl shadow-sm">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-bold text-slate-800 text-sm">{tx.name}</p>
-                                    <p className="text-xs text-slate-500">{tx.category} &bull; {formatDate(tx.date)}</p>
-                                    {tx.notes && <p className="text-xs text-slate-400 mt-1 italic">"{tx.notes}"</p>}
+                                    <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{tx.name}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">{tx.category} &bull; {formatDate(tx.date)}</p>
+                                    {tx.notes && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">"{tx.notes}"</p>}
                                 </div>
                                 <p className={`font-semibold text-base ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                                     {tx.type === 'income' ? '+' : '-'} {formatCurrency(tx.amount)}
                                 </p>
                             </div>
-                            <div className="flex justify-end gap-1 mt-2 pt-2 border-t border-slate-100">
-                                <button onClick={() => handleEdit(tx)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full"><Edit size={16} /></button>
-                                <button onClick={() => handleDelete(tx.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-full"><Trash2 size={16} /></button>
+                            <div className="flex justify-end gap-1 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+                                <button onClick={() => handleEdit(tx)} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-full"><Edit size={16} /></button>
+                                <button onClick={() => handleDelete(tx.id)} className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-slate-700 rounded-full"><Trash2 size={16} /></button>
                             </div>
                         </div>
                     ))
                 ) : (
-                    <p className="text-center text-sm text-slate-500 bg-white p-6 rounded-lg shadow-sm">Tidak ada transaksi yang cocok.</p>
+                    <p className="text-center text-sm text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">Tidak ada transaksi yang cocok.</p>
                 )}
             </div>
             
@@ -505,33 +535,33 @@ const AddTransactionForm = ({ user, setView, existingTransaction, onTransactionU
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
             {!existingTransaction && (
-                <div className="grid grid-cols-2 gap-2 p-1 bg-slate-200 rounded-full">
-                    <button type="button" onClick={() => setType('expense')} className={`w-full py-2 rounded-full font-semibold transition text-sm ${type === 'expense' ? 'bg-red-500 text-white shadow' : 'text-slate-600'}`}>Pengeluaran</button>
-                    <button type="button" onClick={() => setType('income')} className={`w-full py-2 rounded-full font-semibold transition text-sm ${type === 'income' ? 'bg-green-500 text-white shadow' : 'text-slate-600'}`}>Pemasukan</button>
+                <div className="grid grid-cols-2 gap-2 p-1 bg-slate-200 dark:bg-slate-700 rounded-full">
+                    <button type="button" onClick={() => setType('expense')} className={`w-full py-2 rounded-full font-semibold transition text-sm ${type === 'expense' ? 'bg-red-500 text-white shadow' : 'text-slate-600 dark:text-slate-300'}`}>Pengeluaran</button>
+                    <button type="button" onClick={() => setType('income')} className={`w-full py-2 rounded-full font-semibold transition text-sm ${type === 'income' ? 'bg-green-500 text-white shadow' : 'text-slate-600 dark:text-slate-300'}`}>Pemasukan</button>
                 </div>
             )}
             
             {error && <p className="bg-red-100 text-red-700 p-3 rounded-lg text-center text-xs">{error}</p>}
 
             <div>
-                <label className="block text-slate-600 font-semibold mb-1 text-sm">Nama Transaksi</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" required />
+                <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1 text-sm">Nama Transaksi</label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
             </div>
             <div>
-                <label className="block text-slate-600 font-semibold mb-1 text-sm">Kategori</label>
-                <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" required />
+                <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1 text-sm">Kategori</label>
+                <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
             </div>
             <div>
-                <label className="block text-slate-600 font-semibold mb-1 text-sm">Nominal</label>
-                <input type="text" inputMode="numeric" value={displayAmount} onChange={handleAmountChange} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" required />
+                <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1 text-sm">Nominal</label>
+                <input type="text" inputMode="numeric" value={displayAmount} onChange={handleAmountChange} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
             </div>
             <div>
-                <label className="block text-slate-600 font-semibold mb-1 text-sm">Tanggal</label>
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" required />
+                <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1 text-sm">Tanggal</label>
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
             </div>
             <div>
-                <label className="block text-slate-600 font-semibold mb-1 text-sm">Catatan (Opsional)</label>
-                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" rows="3"></textarea>
+                <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1 text-sm">Catatan (Opsional)</label>
+                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" rows="3"></textarea>
             </div>
             <button type="submit" disabled={loading} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition disabled:bg-indigo-300 flex justify-center items-center text-sm">
                 {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : (existingTransaction ? 'Simpan Perubahan' : 'Simpan Transaksi')}
@@ -542,12 +572,12 @@ const AddTransactionForm = ({ user, setView, existingTransaction, onTransactionU
 
 const AddTransactionPage = ({ user, setView }) => {
     return (
-        <div className="p-4 pb-24 bg-slate-50 min-h-screen">
+        <div className="p-4 pb-24 bg-slate-50 dark:bg-slate-900 min-h-screen">
             <div className="flex items-center mb-6">
-                <button onClick={() => setView('home')} className="p-2 mr-2 rounded-full hover:bg-slate-200">
-                    <ArrowLeft size={22} className="text-slate-700" />
+                <button onClick={() => setView('home')} className="p-2 mr-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                    <ArrowLeft size={22} className="text-slate-700 dark:text-slate-300" />
                 </button>
-                <h1 className="text-xl font-bold text-slate-800">Buat Transaksi Baru</h1>
+                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">Buat Transaksi Baru</h1>
             </div>
             <AddTransactionForm user={user} setView={setView} />
         </div>
@@ -689,38 +719,38 @@ const DebtPage = ({ user, setView, setSelectedDebt }) => {
     const monthlyProgress = monthlyTotalDebt > 0 ? (monthlyPaidDebt / monthlyTotalDebt) * 100 : 0;
 
     return (
-        <div className="p-4 pb-24 bg-slate-50 min-h-screen">
+        <div className="p-4 pb-24 bg-slate-50 dark:bg-slate-900 min-h-screen">
             {notification.show && (
                 <div className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 text-sm ${notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
                     {notification.message}
                 </div>
             )}
              <div className="flex items-center mb-6">
-                <button onClick={() => setView('home')} className="p-2 mr-2 rounded-full hover:bg-slate-200">
-                    <ArrowLeft size={22} className="text-slate-700" />
+                <button onClick={() => setView('home')} className="p-2 mr-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                    <ArrowLeft size={22} className="text-slate-700 dark:text-slate-300" />
                 </button>
-                <h1 className="text-xl font-bold text-slate-800">Manajemen Hutang</h1>
+                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">Manajemen Hutang</h1>
             </div>
             
             <div className="grid grid-cols-1 gap-4 mb-6">
-                <div className="bg-white p-4 rounded-2xl shadow-md space-y-2">
-                    <p className="text-slate-600 text-sm">Hutang Bulan Ini</p>
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-md space-y-2">
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">Hutang Bulan Ini</p>
                     <p className="text-xl font-bold text-red-600">{formatCurrency(monthlyTotalDebt)}</p>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                         <div className="bg-gradient-to-r from-yellow-400 to-orange-500 h-2 rounded-full" style={{ width: `${monthlyProgress}%` }}></div>
                     </div>
-                    <div className="flex justify-between text-xs text-slate-500">
+                    <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                         <span>{Math.round(monthlyProgress)}% dibayar</span>
                         <span>Kurang: {formatCurrency(monthlyRemainingDebt < 0 ? 0 : monthlyRemainingDebt)}</span>
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-2xl shadow-md space-y-2">
-                    <p className="text-slate-600 text-sm">Total Hutang Berjalan</p>
-                    <p className="text-xl font-bold text-slate-800">{formatCurrency(totalRemainingDebt)}</p>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-md space-y-2">
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">Total Hutang Berjalan</p>
+                    <p className="text-xl font-bold text-slate-800 dark:text-slate-200">{formatCurrency(totalRemainingDebt)}</p>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                         <div className="bg-gradient-to-r from-purple-500 to-indigo-500 h-2 rounded-full" style={{ width: `${totalProgress}%` }}></div>
                     </div>
-                     <div className="flex justify-between text-xs text-slate-500">
+                     <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                         <span>{Math.round(totalProgress)}% lunas</span>
                         <span>Sisa: {formatCurrency(totalRemainingDebt)}</span>
                     </div>
@@ -728,7 +758,7 @@ const DebtPage = ({ user, setView, setSelectedDebt }) => {
             </div>
 
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold text-slate-800">Daftar Hutang</h2>
+                <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Daftar Hutang</h2>
                 <button onClick={() => setIsAddModalOpen(true)} className="bg-indigo-600 text-white font-semibold py-2 px-3 rounded-lg hover:bg-indigo-700 transition text-sm flex items-center gap-1">
                     <Plus size={16}/> Tambah
                 </button>
@@ -741,17 +771,17 @@ const DebtPage = ({ user, setView, setSelectedDebt }) => {
                     const isPaidOff = debt.paidInstallments >= debt.tenor;
 
                     return (
-                        <div key={debt.id} className="bg-white p-3.5 rounded-xl shadow-sm cursor-pointer transition-all hover:ring-2 hover:ring-indigo-400" onClick={() => handleDebtClick(debt)}>
+                        <div key={debt.id} className="bg-white dark:bg-slate-800 p-3.5 rounded-xl shadow-sm cursor-pointer transition-all hover:ring-2 hover:ring-indigo-400" onClick={() => handleDebtClick(debt)}>
                             <div className="flex justify-between items-start">
-                                <h3 className="font-bold text-base text-slate-800">{debt.name}</h3>
+                                <h3 className="font-bold text-base text-slate-800 dark:text-slate-200">{debt.name}</h3>
                                 {isPaidOff && <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">LUNAS</span>}
                             </div>
-                            <p className="text-xs text-slate-500 mb-2">Angsuran: {formatCurrency(debt.monthlyInstallment)} / bulan</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Angsuran: {formatCurrency(debt.monthlyInstallment)} / bulan</p>
                             
-                            <div className="w-full bg-slate-200 rounded-full h-1.5 my-2">
+                            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 my-2">
                                 <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
                             </div>
-                            <div className="flex justify-between text-xs text-slate-600">
+                            <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                                 <span>{debt.paidInstallments}/{debt.tenor} bulan</span>
                                 <span>Sisa: {formatCurrency(remainingDebt)}</span>
                             </div>
@@ -767,7 +797,7 @@ const DebtPage = ({ user, setView, setSelectedDebt }) => {
                         </div>
                     )
                 }) : (
-                    <p className="text-center text-sm text-slate-500 bg-white p-6 rounded-lg shadow-sm">Anda tidak memiliki hutang. Selamat!</p>
+                    <p className="text-center text-sm text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">Anda tidak memiliki hutang. Selamat!</p>
                 )}
             </div>
 
@@ -778,9 +808,9 @@ const DebtPage = ({ user, setView, setSelectedDebt }) => {
             <Modal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} title="Konfirmasi Pembayaran">
                 {debtToPay && (
                     <div>
-                        <p className="text-slate-700 mb-4 text-sm">Anda akan membayar angsuran untuk <span className="font-bold">{debtToPay.name}</span> sebesar <span className="font-bold">{formatCurrency(debtToPay.monthlyInstallment)}</span>. Lanjutkan?</p>
+                        <p className="text-slate-700 dark:text-slate-300 mb-4 text-sm">Anda akan membayar angsuran untuk <span className="font-bold">{debtToPay.name}</span> sebesar <span className="font-bold">{formatCurrency(debtToPay.monthlyInstallment)}</span>. Lanjutkan?</p>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setIsConfirmModalOpen(false)} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 text-sm">Batal</button>
+                            <button onClick={() => setIsConfirmModalOpen(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500 text-sm">Batal</button>
                             <button onClick={confirmPayment} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">Ya, Bayar</button>
                         </div>
                     </div>
@@ -825,16 +855,16 @@ const AddDebtForm = ({ onAddDebt }) => {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <input name="name" value={formData.name} onChange={handleChange} placeholder="Nama Hutang (e.g., KPR Rumah)" className="w-full p-2.5 border rounded-lg text-sm" required />
-            <input name="totalAmount" type="text" inputMode="numeric" value={displayValues.totalAmount} onChange={handleCurrencyChange} placeholder="Jumlah Pinjaman" className="w-full p-2.5 border rounded-lg text-sm" required />
-            <input name="monthlyInstallment" type="text" inputMode="numeric" value={displayValues.monthlyInstallment} onChange={handleCurrencyChange} placeholder="Nilai Angsuran per Bulan" className="w-full p-2.5 border rounded-lg text-sm" required />
-            <input name="tenor" type="number" value={formData.tenor} onChange={handleChange} placeholder="Tenor (dalam bulan)" className="w-full p-2.5 border rounded-lg text-sm" required />
-            <input name="paidInstallments" type="number" value={formData.paidInstallments} onChange={handleChange} placeholder="Cicilan Sudah Dibayar (e.g., 3)" className="w-full p-2.5 border rounded-lg text-sm" />
+            <input name="name" value={formData.name} onChange={handleChange} placeholder="Nama Hutang (e.g., KPR Rumah)" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+            <input name="totalAmount" type="text" inputMode="numeric" value={displayValues.totalAmount} onChange={handleCurrencyChange} placeholder="Jumlah Pinjaman" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+            <input name="monthlyInstallment" type="text" inputMode="numeric" value={displayValues.monthlyInstallment} onChange={handleCurrencyChange} placeholder="Nilai Angsuran per Bulan" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+            <input name="tenor" type="number" value={formData.tenor} onChange={handleChange} placeholder="Tenor (dalam bulan)" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+            <input name="paidInstallments" type="number" value={formData.paidInstallments} onChange={handleChange} placeholder="Cicilan Sudah Dibayar (e.g., 3)" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" />
             <div>
-                <label className="text-xs text-slate-500">Tanggal Mulai Cicilan</label>
-                <input name="startDate" type="date" value={formData.startDate} onChange={handleChange} className="w-full p-2.5 border rounded-lg text-sm" required />
+                <label className="text-xs text-slate-500 dark:text-slate-400">Tanggal Mulai Cicilan</label>
+                <input name="startDate" type="date" value={formData.startDate} onChange={handleChange} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
             </div>
-            <input name="dueDate" type="number" min="1" max="31" value={formData.dueDate} onChange={handleChange} placeholder="Tanggal Jatuh Tempo (1-31)" className="w-full p-2.5 border rounded-lg text-sm" required />
+            <input name="dueDate" type="number" min="1" max="31" value={formData.dueDate} onChange={handleChange} placeholder="Tanggal Jatuh Tempo (1-31)" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
             <button type="submit" disabled={loading} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm">
                 {loading ? 'Menyimpan...' : 'Simpan Hutang'}
             </button>
@@ -847,8 +877,8 @@ const DebtDetailPage = ({ user, debt, setView, onUpdate }) => {
 
     if (!debt) {
         return (
-            <div className="p-4 bg-slate-50 min-h-screen">
-                <p className="text-sm">Hutang tidak ditemukan.</p>
+            <div className="p-4 bg-slate-50 dark:bg-slate-900 min-h-screen">
+                <p className="text-sm text-slate-600 dark:text-slate-400">Hutang tidak ditemukan.</p>
                 <button onClick={() => setView('debts')} className="text-indigo-600 mt-4 text-sm">Kembali ke daftar</button>
             </div>
         );
@@ -881,32 +911,32 @@ const DebtDetailPage = ({ user, debt, setView, onUpdate }) => {
     const isPaidOff = debt.paidInstallments >= debt.tenor;
 
     return (
-        <div className="p-4 pb-24 bg-slate-50 min-h-screen">
+        <div className="p-4 pb-24 bg-slate-50 dark:bg-slate-900 min-h-screen">
             <div className="flex items-center mb-6">
-                <button onClick={() => setView('debts')} className="p-2 mr-2 rounded-full hover:bg-slate-200">
-                    <ArrowLeft size={22} className="text-slate-700" />
+                <button onClick={() => setView('debts')} className="p-2 mr-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                    <ArrowLeft size={22} className="text-slate-700 dark:text-slate-300" />
                 </button>
-                <h1 className="text-xl font-bold text-slate-800 truncate">{debt.name}</h1>
+                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200 truncate">{debt.name}</h1>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl shadow-md mb-6 space-y-3">
+            <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-md mb-6 space-y-3">
                 <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Status</span>
+                    <span className="text-slate-600 dark:text-slate-400">Status</span>
                     <span className={`font-semibold ${isPaidOff ? 'text-green-600' : 'text-yellow-600'}`}>{isPaidOff ? 'Lunas' : 'Belum Lunas'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Sisa Hutang</span>
-                    <span className="font-semibold text-slate-800">{formatCurrency(debt.totalAmount - (debt.paidInstallments * debt.monthlyInstallment))}</span>
+                    <span className="text-slate-600 dark:text-slate-400">Sisa Hutang</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{formatCurrency(debt.totalAmount - (debt.paidInstallments * debt.monthlyInstallment))}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Angsuran / Bulan</span>
-                    <span className="font-semibold text-slate-800">{formatCurrency(debt.monthlyInstallment)}</span>
+                    <span className="text-slate-600 dark:text-slate-400">Angsuran / Bulan</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{formatCurrency(debt.monthlyInstallment)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Jatuh Tempo</span>
-                    <span className="font-semibold text-slate-800">Tanggal {debt.dueDate} setiap bulan</span>
+                    <span className="text-slate-600 dark:text-slate-400">Jatuh Tempo</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">Tanggal {debt.dueDate} setiap bulan</span>
                 </div>
-                <div className="flex justify-end gap-2 pt-3 border-t">
+                <div className="flex justify-end gap-2 pt-3 border-t dark:border-slate-700">
                     <button onClick={() => setIsEditModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-100 text-yellow-800 font-semibold rounded-lg hover:bg-yellow-200 text-xs">
                         <Edit size={14} /> Edit
                     </button>
@@ -916,7 +946,7 @@ const DebtDetailPage = ({ user, debt, setView, onUpdate }) => {
                 </div>
             </div>
 
-            <h2 className="text-lg font-bold text-slate-800 mb-3">Jadwal Cicilan</h2>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3">Jadwal Cicilan</h2>
             <div className="space-y-2">
                 {Array.from({ length: debt.tenor }, (_, i) => {
                     const installmentNumber = i + 1;
@@ -925,12 +955,12 @@ const DebtDetailPage = ({ user, debt, setView, onUpdate }) => {
                     installmentDate.setMonth(installmentDate.getMonth() + i);
 
                     return (
-                        <div key={i} className={`flex justify-between items-center p-3 rounded-lg ${isPaid ? 'bg-green-50 text-green-700' : 'bg-slate-100'}`}>
+                        <div key={i} className={`flex justify-between items-center p-3 rounded-lg ${isPaid ? 'bg-green-50 dark:bg-green-900/50 text-green-700 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-800'}`}>
                             <div>
-                                <p className="font-semibold text-sm">Angsuran ke-{installmentNumber}</p>
-                                <p className="text-xs">{formatDate(installmentDate)}</p>
+                                <p className="font-semibold text-sm text-slate-800 dark:text-slate-300">Angsuran ke-{installmentNumber}</p>
+                                <p className="text-xs text-slate-600 dark:text-slate-400">{formatDate(installmentDate)}</p>
                             </div>
-                            <span className={`font-semibold text-xs px-2.5 py-1 rounded-full ${isPaid ? 'bg-green-200' : 'bg-slate-200 text-slate-600'}`}>
+                            <span className={`font-semibold text-xs px-2.5 py-1 rounded-full ${isPaid ? 'bg-green-200 dark:bg-green-500/30' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
                                 {isPaid ? 'Lunas' : 'Belum Dibayar'}
                             </span>
                         </div>
@@ -989,13 +1019,13 @@ const EditDebtForm = ({ existingDebt, onUpdateDebt }) => {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <input name="name" value={formData.name} onChange={handleChange} placeholder="Nama Hutang" className="w-full p-2.5 border rounded-lg text-sm" required />
-            <input name="totalAmount" type="text" inputMode="numeric" value={displayValues.totalAmount} onChange={handleCurrencyChange} placeholder="Jumlah Pinjaman" className="w-full p-2.5 border rounded-lg text-sm" required />
-            <input name="monthlyInstallment" type="text" inputMode="numeric" value={displayValues.monthlyInstallment} onChange={handleCurrencyChange} placeholder="Angsuran per Bulan" className="w-full p-2.5 border rounded-lg text-sm" required />
-            <input name="tenor" type="number" value={formData.tenor} onChange={handleChange} placeholder="Tenor (bulan)" className="w-full p-2.5 border rounded-lg text-sm" required />
-            <input name="paidInstallments" type="number" value={formData.paidInstallments} onChange={handleChange} placeholder="Cicilan Sudah Dibayar" className="w-full p-2.5 border rounded-lg text-sm" />
-            <input name="startDate" type="date" value={formData.startDate} onChange={handleChange} className="w-full p-2.5 border rounded-lg text-sm" required />
-            <input name="dueDate" type="number" min="1" max="31" value={formData.dueDate} onChange={handleChange} placeholder="Tanggal Jatuh Tempo" className="w-full p-2.5 border rounded-lg text-sm" required />
+            <input name="name" value={formData.name} onChange={handleChange} placeholder="Nama Hutang" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+            <input name="totalAmount" type="text" inputMode="numeric" value={displayValues.totalAmount} onChange={handleCurrencyChange} placeholder="Jumlah Pinjaman" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+            <input name="monthlyInstallment" type="text" inputMode="numeric" value={displayValues.monthlyInstallment} onChange={handleCurrencyChange} placeholder="Angsuran per Bulan" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+            <input name="tenor" type="number" value={formData.tenor} onChange={handleChange} placeholder="Tenor (bulan)" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+            <input name="paidInstallments" type="number" value={formData.paidInstallments} onChange={handleChange} placeholder="Cicilan Sudah Dibayar" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" />
+            <input name="startDate" type="date" value={formData.startDate} onChange={handleChange} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+            <input name="dueDate" type="number" min="1" max="31" value={formData.dueDate} onChange={handleChange} placeholder="Tanggal Jatuh Tempo" className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
             <button type="submit" disabled={loading} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg text-sm">
                 {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
@@ -1056,12 +1086,12 @@ const ProfilePage = ({ user, setView, onUserUpdate }) => {
     };
 
     return (
-        <div className="p-4 bg-slate-50 min-h-screen">
+        <div className="p-4 bg-slate-50 dark:bg-slate-900 min-h-screen">
             <div className="flex items-center mb-6">
-                <button onClick={() => setView('home')} className="p-2 mr-2 rounded-full hover:bg-slate-200">
-                    <ArrowLeft size={22} className="text-slate-700" />
+                <button onClick={() => setView('home')} className="p-2 mr-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                    <ArrowLeft size={22} className="text-slate-700 dark:text-slate-300" />
                 </button>
-                <h1 className="text-xl font-bold text-slate-800">Profil Pengguna</h1>
+                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">Profil Pengguna</h1>
             </div>
 
             {message.text && (
@@ -1070,44 +1100,44 @@ const ProfilePage = ({ user, setView, onUserUpdate }) => {
                 </div>
             )}
 
-            <div className="bg-white p-6 rounded-2xl shadow-md space-y-5">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md space-y-5">
                 <div>
-                    <h2 className="text-base font-bold text-slate-800 mb-2">Edit Nama</h2>
+                    <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-2">Edit Nama</h2>
                     {!isEditingName ? (
                         <div className="flex justify-between items-center">
-                            <p className="text-slate-600 text-sm">{name}</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm">{name}</p>
                             <button onClick={() => setIsEditingName(true)} className="text-indigo-600 font-semibold text-sm">Edit</button>
                         </div>
                     ) : (
                         <form onSubmit={handleNameUpdate} className="space-y-3">
-                            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2 border rounded-lg text-sm" />
+                            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" />
                             <div className="flex gap-2">
                                 <button type="submit" className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm">Simpan</button>
-                                <button type="button" onClick={() => setIsEditingName(false)} className="flex-1 bg-slate-200 py-2 rounded-lg text-sm">Batal</button>
+                                <button type="button" onClick={() => setIsEditingName(false)} className="flex-1 bg-slate-200 dark:bg-slate-600 py-2 rounded-lg text-sm text-slate-800 dark:text-slate-200">Batal</button>
                             </div>
                         </form>
                     )}
                 </div>
 
-                <hr/>
+                <hr className="dark:border-slate-700"/>
 
                 <div>
-                    <h2 className="text-base font-bold text-slate-800 mb-2">Ganti Password</h2>
+                    <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-2">Ganti Password</h2>
                     {!isChangingPassword ? (
                         <button onClick={() => setIsChangingPassword(true)} className="w-full text-left text-indigo-600 font-semibold text-sm">Ganti Password</button>
                     ) : (
                         <form onSubmit={handlePasswordChange} className="space-y-3">
-                            <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Password Saat Ini" className="w-full p-2 border rounded-lg text-sm" required />
-                            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Password Baru" className="w-full p-2 border rounded-lg text-sm" required />
+                            <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Password Saat Ini" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+                            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Password Baru" className="w-full p-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
                             <div className="flex gap-2">
                                 <button type="submit" className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm">Ganti</button>
-                                <button type="button" onClick={() => setIsChangingPassword(false)} className="flex-1 bg-slate-200 py-2 rounded-lg text-sm">Batal</button>
+                                <button type="button" onClick={() => setIsChangingPassword(false)} className="flex-1 bg-slate-200 dark:bg-slate-600 py-2 rounded-lg text-sm text-slate-800 dark:text-slate-200">Batal</button>
                             </div>
                         </form>
                     )}
                 </div>
 
-                <hr/>
+                <hr className="dark:border-slate-700"/>
 
                 <button onClick={() => signOut(auth)} className="w-full bg-red-500 text-white font-bold py-2.5 rounded-lg hover:bg-red-600 transition flex items-center justify-center gap-2 text-sm">
                     <LogOut size={18} /> Logout
@@ -1121,6 +1151,14 @@ const ProfilePage = ({ user, setView, onUserUpdate }) => {
 // --- Komponen Utama Aplikasi ---
 
 export default function App() {
+    return (
+        <ThemeProvider>
+            <MainApp />
+        </ThemeProvider>
+    );
+}
+
+function MainApp() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState(window.location.hash.substring(1) || 'home');
@@ -1186,7 +1224,7 @@ export default function App() {
 
     if (loading) {
         return (
-            <div className="bg-slate-50 h-screen flex justify-center items-center">
+            <div className="bg-slate-50 dark:bg-slate-900 h-screen flex justify-center items-center">
                 <LoadingSpinner />
             </div>
         );
@@ -1198,19 +1236,19 @@ export default function App() {
 
     return (
         <div className="bg-black sm:bg-slate-200 flex justify-center">
-            <div className="w-full max-w-sm min-h-screen bg-slate-50 font-sans relative">
+            <div className="w-full max-w-sm min-h-screen bg-slate-50 dark:bg-slate-900 font-sans relative">
                 <main className="h-full">
                     {renderView()}
                 </main>
                 
-                <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-sm bg-white/90 backdrop-blur-sm border-t border-slate-200" style={{borderTopLeftRadius: '24px', borderTopRightRadius: '24px'}}>
+                <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-sm bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-t border-slate-200 dark:border-slate-700" style={{borderTopLeftRadius: '24px', borderTopRightRadius: '24px'}}>
                     <div className="flex justify-around items-center h-16 px-2 relative">
                         {/* Navigasi Kiri */}
-                        <button onClick={() => setView('home')} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors w-16 ${view === 'home' ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-500'}`}>
+                        <button onClick={() => setView('home')} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors w-16 ${view === 'home' ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-500'}`}>
                             <Home size={22} strokeWidth={view === 'home' ? 2.5 : 2}/>
                             <span className="text-xs font-semibold">Home</span>
                         </button>
-                        <button onClick={() => setView('transactions')} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors w-16 ${view === 'transactions' ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-500'}`}>
+                        <button onClick={() => setView('transactions')} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors w-16 ${view === 'transactions' ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-500'}`}>
                             <FileText size={22} strokeWidth={view === 'transactions' ? 2.5 : 2}/>
                             <span className="text-xs font-semibold">Riwayat</span>
                         </button>
@@ -1219,11 +1257,11 @@ export default function App() {
                         <div className="w-14"></div>
 
                         {/* Navigasi Kanan */}
-                        <button onClick={() => setView('debts')} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors w-16 ${['debts', 'debtDetail'].includes(view) ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-500'}`}>
+                        <button onClick={() => setView('debts')} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors w-16 ${['debts', 'debtDetail'].includes(view) ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-500'}`}>
                             <Landmark size={22} strokeWidth={['debts', 'debtDetail'].includes(view) ? 2.5 : 2}/>
                             <span className="text-xs font-semibold">Hutang</span>
                         </button>
-                        <button onClick={() => setView('profile')} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors w-16 ${view === 'profile' ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-500'}`}>
+                        <button onClick={() => setView('profile')} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors w-16 ${view === 'profile' ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-500'}`}>
                             <User size={22} strokeWidth={view === 'profile' ? 2.5 : 2}/>
                             <span className="text-xs font-semibold">Profil</span>
                         </button>
