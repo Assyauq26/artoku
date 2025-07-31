@@ -561,10 +561,20 @@ const DebtPage = ({ user, setView, setSelectedDebt }) => {
             setDebts(debtsData);
 
             let currentMonthlyTotal = 0;
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
             debtsData.forEach(debt => {
                 const isPaidOff = debt.paidInstallments >= debt.tenor;
                 if (!isPaidOff) {
-                    currentMonthlyTotal += debt.monthlyInstallment;
+                    const startDate = debt.startDate.toDate();
+                    const expectedPaymentDate = new Date(startDate);
+                    expectedPaymentDate.setMonth(startDate.getMonth() + debt.paidInstallments);
+
+                    if (expectedPaymentDate.getMonth() === currentMonth && expectedPaymentDate.getFullYear() === currentYear) {
+                         currentMonthlyTotal += debt.monthlyInstallment;
+                    }
                 }
             });
             setMonthlyTotalDebt(currentMonthlyTotal);
