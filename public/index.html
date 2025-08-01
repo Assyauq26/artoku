@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-t" />
+    <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
@@ -13,9 +13,20 @@
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>ArtoKu</title>
     
-    <!-- MEMUAT TAILWIND CSS TERLEBIH DAHULU -->
+    <!-- Skrip untuk mengatur tema awal agar tidak ada kedipan (FOUC) -->
+    <script>
+      // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+      if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    </script>
+    
+    <!-- PENTING: Muat skrip utama Tailwind SEBELUM melakukan konfigurasi -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- KONFIGURASI DARK MODE SETELAH TAILWIND SIAP -->
+    
+    <!-- Konfigurasi dark mode setelah Tailwind dimuat -->
     <script>
       tailwind.config = {
         darkMode: 'class',
