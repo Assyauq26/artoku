@@ -108,6 +108,16 @@ const formatDate = (date) => {
     return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
 };
 
+const formatDateTime = (date) => {
+    if (!date) return '';
+    const d = date instanceof Timestamp ? date.toDate() : new Date(date);
+    return d.toLocaleDateString('id-ID', {
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    }).replace('pukul', ',');
+};
+
+
 // --- Komponen UI ---
 
 const LoadingSpinner = () => (
@@ -249,17 +259,17 @@ const HomeScreen = ({ user, setView }) => {
             where("date", "<=", Timestamp.fromDate(endOfMonth))
         );
         const unsubscribeMonthly = onSnapshot(qMonth, (snapshot) => {
-            let income = 0;
-            let expense = 0;
+            let monthlyIncome = 0;
+            let monthlyExpense = 0;
             snapshot.forEach(doc => {
                 const data = doc.data();
-                if (data.type === 'income') income += data.amount;
-                else expense += data.amount;
+                if (data.type === 'income') monthlyIncome += data.amount;
+                else monthlyExpense += data.amount;
             });
-            setSummary(prev => ({ ...prev, monthlyIncome: income, monthlyExpense: expense }));
+            setSummary(prev => ({ ...prev, monthlyIncome, monthlyExpense }));
         });
 
-        // Listener for total balance
+        // Listener for total balance from all transactions
         const qAll = query(collection(db, `users/${user.uid}/transactions`));
         const unsubscribeTotal = onSnapshot(qAll, (snapshot) => {
             let totalIncome = 0;
@@ -343,7 +353,7 @@ const HomeScreen = ({ user, setView }) => {
                                 <div key={tx.id} className="flex items-center justify-between bg-white dark:bg-slate-800 p-3.5 rounded-xl shadow-sm">
                                     <div>
                                         <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{tx.name}</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(tx.date)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{formatDateTime(tx.date)}</p>
                                     </div>
                                     <p className={`font-semibold text-base ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                                         {tx.type === 'income' ? '+' : '-'} {formatCurrency(tx.amount)}
@@ -351,7 +361,7 @@ const HomeScreen = ({ user, setView }) => {
                                 </div>
                             ))
                         ) : (
-                             <p className="text-center text-sm text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">Belum ada transaksi bulan ini.</p>
+                             <p className="text-center text-sm text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">Belum ada transaksi.</p>
                         )}
                     </div>
                 </div>
@@ -467,7 +477,7 @@ const TransactionListPage = ({ user, setView }) => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{tx.name}</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">{tx.category} &bull; {formatDate(tx.date)}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">{tx.category} &bull; {formatDateTime(tx.date)}</p>
                                     {tx.notes && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">"{tx.notes}"</p>}
                                 </div>
                                 <p className={`font-semibold text-base ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
@@ -495,12 +505,16 @@ const TransactionListPage = ({ user, setView }) => {
 };
 
 const AddTransactionForm = ({ user, setView, existingTransaction, onTransactionUpdated }) => {
+    const formatTimeForInput = (date) => date.toTimeString().slice(0, 5);
+    const formatDateForInput = (date) => date.toISOString().split('T')[0];
+
     const [type, setType] = useState(existingTransaction?.type || 'expense');
     const [name, setName] = useState(existingTransaction?.name || '');
     const [category, setCategory] = useState(existingTransaction?.category || '');
     const [amount, setAmount] = useState(existingTransaction?.amount || 0);
     const [displayAmount, setDisplayAmount] = useState(existingTransaction ? formatNumberWithSeparators(existingTransaction.amount) : '');
-    const [date, setDate] = useState(existingTransaction ? existingTransaction.date.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState(existingTransaction ? formatDateForInput(existingTransaction.date.toDate()) : formatDateForInput(new Date()));
+    const [time, setTime] = useState(existingTransaction ? formatTimeForInput(existingTransaction.date.toDate()) : formatTimeForInput(new Date()));
     const [notes, setNotes] = useState(existingTransaction?.notes || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -520,10 +534,12 @@ const AddTransactionForm = ({ user, setView, existingTransaction, onTransactionU
         setLoading(true);
         setError('');
 
+        const combinedDateTime = new Date(`${date}T${time}`);
+
         const transactionData = {
             type, name, category,
             amount: amount,
-            date: Timestamp.fromDate(new Date(date)),
+            date: Timestamp.fromDate(combinedDateTime),
             notes,
         };
 
@@ -565,9 +581,15 @@ const AddTransactionForm = ({ user, setView, existingTransaction, onTransactionU
                 <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1 text-sm">Nominal</label>
                 <input type="text" inputMode="numeric" value={displayAmount} onChange={handleAmountChange} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
             </div>
-            <div>
-                <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1 text-sm">Tanggal</label>
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+            <div className="flex gap-4">
+                <div className="flex-1">
+                    <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1 text-sm">Tanggal</label>
+                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+                </div>
+                <div className="w-2/5">
+                    <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1 text-sm">Waktu</label>
+                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-200" required />
+                </div>
             </div>
             <div>
                 <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1 text-sm">Catatan (Opsional)</label>
