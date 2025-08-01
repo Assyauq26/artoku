@@ -231,7 +231,7 @@ const LoginPage = ({ setView }) => {
 
 const HomeScreen = ({ user, setView }) => {
     const { theme, toggleTheme } = useTheme();
-    const [summary, setSummary] = useState({ balance: 0, income: 0, expense: 0 });
+    const [summary, setSummary] = useState({ totalBalance: 0, monthlyIncome: 0, monthlyExpense: 0 });
     const [recentTransactions, setRecentTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -248,19 +248,28 @@ const HomeScreen = ({ user, setView }) => {
             where("date", ">=", Timestamp.fromDate(startOfMonth)),
             where("date", "<=", Timestamp.fromDate(endOfMonth))
         );
-        const unsubscribeSummary = onSnapshot(qMonth, (snapshot) => {
-            let monthlyIncome = 0;
-            let monthlyExpense = 0;
+        const unsubscribeMonthly = onSnapshot(qMonth, (snapshot) => {
+            let income = 0;
+            let expense = 0;
             snapshot.forEach(doc => {
                 const data = doc.data();
-                if (data.type === 'income') monthlyIncome += data.amount;
-                else monthlyExpense += data.amount;
+                if (data.type === 'income') income += data.amount;
+                else expense += data.amount;
             });
-            setSummary({
-                balance: monthlyIncome - monthlyExpense,
-                income: monthlyIncome,
-                expense: monthlyExpense,
+            setSummary(prev => ({ ...prev, monthlyIncome: income, monthlyExpense: expense }));
+        });
+
+        // Listener for total balance
+        const qAll = query(collection(db, `users/${user.uid}/transactions`));
+        const unsubscribeTotal = onSnapshot(qAll, (snapshot) => {
+            let totalIncome = 0;
+            let totalExpense = 0;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.type === 'income') totalIncome += data.amount;
+                else totalExpense += data.amount;
             });
+            setSummary(prev => ({ ...prev, totalBalance: totalIncome - totalExpense }));
         });
 
         // Listener for recent transactions
@@ -277,7 +286,8 @@ const HomeScreen = ({ user, setView }) => {
         setLoading(false);
 
         return () => {
-            unsubscribeSummary();
+            unsubscribeMonthly();
+            unsubscribeTotal();
             unsubscribeRecent();
         };
     }, [user]);
@@ -305,21 +315,21 @@ const HomeScreen = ({ user, setView }) => {
 
             <main>
                 <div className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white p-5 rounded-2xl shadow-lg mb-6">
-                    <p className="text-sm opacity-80">Saldo Bulan Ini</p>
-                    <p className="text-3xl font-bold tracking-tight">{formatCurrency(summary.balance)}</p>
+                    <p className="text-sm opacity-80">Total Saldo</p>
+                    <p className="text-3xl font-bold tracking-tight">{formatCurrency(summary.totalBalance)}</p>
                     <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/20">
                         <div className="flex items-center gap-2">
                             <ArrowDownLeft className="w-4 h-4 text-green-300" />
                             <div>
-                                <p className="text-xs opacity-80">Pemasukan</p>
-                                <p className="font-semibold text-sm">{formatCurrency(summary.income)}</p>
+                                <p className="text-xs opacity-80">Pemasukan Bulan Ini</p>
+                                <p className="font-semibold text-sm">{formatCurrency(summary.monthlyIncome)}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
                             <ArrowUpRight className="w-4 h-4 text-red-300" />
                             <div>
-                                <p className="text-xs opacity-80">Pengeluaran</p>
-                                <p className="font-semibold text-sm">{formatCurrency(summary.expense)}</p>
+                                <p className="text-xs opacity-80">Pengeluaran Bulan Ini</p>
+                                <p className="font-semibold text-sm">{formatCurrency(summary.monthlyExpense)}</p>
                             </div>
                         </div>
                     </div>
